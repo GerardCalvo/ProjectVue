@@ -1,31 +1,33 @@
 <script setup>
 import { ref, computed } from 'vue'
+import TaskForm from './TaskForm.vue'
+import TaskList from './TaskList.vue'
 
-const newTitle = ref('')
 const showOnlyPending = ref(false)
 const tasks = ref([
   { id: 1, title: 'Passejar al gos', done: false, createdAt: new Date() },
   { id: 2, title: "Estudiar per l'examen", done: false, createdAt: new Date() },
-  { id: 3, title: 'Anar al gimnas', done: true, createdAt: new Date() }
+  { id: 3, title: 'Anar al gimnas', done: true, createdAt: new Date() },
 ])
 
-const visibleTasks = computed(() => {
-  return showOnlyPending.value ? tasks.value.filter((t) => !t.done) : tasks.value
-})
+const visibleTasks = computed(() =>
+  showOnlyPending.value ? tasks.value.filter((t) => !t.done) : tasks.value
+)
+
 const totalCount = computed(() => tasks.value.length)
 const pendingCount = computed(() => tasks.value.filter((t) => !t.done).length)
 
-function addTask() {
-  const title = newTitle.value.trim()
-  if (!title) return
-  const nextId = tasks.value.length ? Math.max(...tasks.value.map((t) => t.id)) + 1 : 1
+function addTask(title) {
+  const nextId = tasks.value.length
+    ? Math.max(...tasks.value.map((t) => t.id)) + 1
+    : 1
+
   tasks.value.push({
     id: nextId,
     title,
     done: false,
     createdAt: new Date(),
   })
-  newTitle.value = ''
 }
 
 function toggleDone(task) {
@@ -46,53 +48,33 @@ function formatDate(d) {
   <section class="task-app">
     <h1>Gestor de Tasques</h1>
 
-    <div class="add-row">
-      <input
-        v-model="newTitle"
-        type="text"
-        placeholder="Títol de la tasca"
-        @keyup.enter="addTask"
-        aria-label="Nou títol"
-      />
-      <button class="primary" @click="addTask">Afegir</button>
-    </div>
+    <!-- Formulari -->
+    <TaskForm @add-task="addTask" />
 
+    <!-- Controls -->
     <div class="controls">
       <label class="toggle">
         <input type="checkbox" v-model="showOnlyPending" />
         <span>Mostrar només pendents</span>
       </label>
       <div class="summary">
-        <strong>Total:</strong> {{ totalCount }} · <strong>Pendents:</strong> {{ pendingCount }}
+        <strong>Total:</strong> {{ totalCount }} ·
+        <strong>Pendents:</strong> {{ pendingCount }}
       </div>
     </div>
 
-    <div v-if="visibleTasks.length" class="list">
-      <div
-        v-for="task in visibleTasks"
-        :key="task.id"
-        class="item"
-        :class="{ done: task.done }"
-      >
-        <label class="left">
-          <input type="checkbox" :checked="task.done" @change="toggleDone(task)" />
-          <span class="title">{{ task.title }}</span>
-        </label>
-
-        <div class="right">
-          <time class="date" :title="formatDate(task.createdAt)">
-            {{ formatDate(task.createdAt) }}
-          </time>
-          <button class="danger" @click="removeTask(task.id)" aria-label="Eliminar">Eliminar</button>
-        </div>
-      </div>
-    </div>
-
-    <p v-else class="empty">No hi ha tasques a mostrar.</p>
+    <!-- Llista -->
+    <TaskList
+      :tasks="visibleTasks"
+      :format-date="formatDate"
+      @toggle-task="toggleDone"
+      @remove-task="removeTask"
+    />
   </section>
 </template>
 
-<style scoped>
+<!-- IMPORTANT: sense "scoped" perquè els estils arribin als fills -->
+<style>
 .task-app {
   max-width: 700px;
   margin: 2rem auto;
